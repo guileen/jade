@@ -28,6 +28,7 @@ program
   .option('-p, --path <path>', 'filename used to resolve includes')
   .option('-P, --pretty', 'compile pretty html output')
   .option('-c, --client', 'compile for client-side runtime.js')
+  .option('-v, --var <str>', 'compile template to variable')
   .option('-D, --no-debug', 'compile without debugging (smaller functions)')
 
 program.on('--help', function(){
@@ -180,17 +181,21 @@ function renderFileSync(path) {
     options.filename = path;
     var fn = jade.compile(str, options);
     console.log('  \033[90mrendered \033[36m%s\033[0m', path);
-    return "jade.templates['" + (abspath.replace(program.root, '') || path) + "'] = " + fn;
+    if(program.args.length == 1 && program.var) {
+      return 'var ' + program.var + ' = ' + fn + '\n';
+    } else {
+      return "jade.templates['" + (abspath.replace(program.root, '') || path) + "'] = " + fn + '\n';
+    }
     // Found directory
   } else if (stat.isDirectory()) {
     var files = fs.readdirSync(path);
 
     var results = files.map(function(filename) {
         return path + '/' + filename;
-    }).map(renderFileSync).filter(function(code){return code!=null});
-    return results.join('\n');
+    }).map(renderFileSync);
+    return results.join('');
   } else {
-    return null;
+    return '';
   }
 }
 
